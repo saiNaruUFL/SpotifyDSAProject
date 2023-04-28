@@ -1,4 +1,4 @@
-#Watch a video of how the app works
+# Video of App
 
 https://www.youtube.com/watch?v=sYXLZbhpqwQ
 
