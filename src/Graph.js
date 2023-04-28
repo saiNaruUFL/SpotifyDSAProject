@@ -17,14 +17,18 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
 
 /* Deals with BFS Find Search */
  useEffect(() => {
-  if(BFSFind == true){
+  /*
+    The very first click simply increments the counter
+    and stores the clicked node, the second clicks calls 
+    the bfs search function
+  */
+  if(BFSFind === true){
       setCounter(counter + 1);
       setData(clickedSong.nodeID);
 
-      if(counter == 1){
+      if(counter === 1){
         const fetchData = async () => {
           await findBFS(data,clickedSong.nodeID);
-          // do something with the data
         };
         fetchData();
         setCounter(0);
@@ -40,7 +44,6 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
     if(expand == true){
       const fetchData = async () => {
         await handleExpand(clickedSong.nodeID);
-        // do something with the data
       };
       fetchData();
 
@@ -53,13 +56,14 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
   useEffect(() => {
     const fetchData = async () => {
       await bfs();
-      // do something with the data
     };
     fetchData();
   }, [clicked]);
 
 
-  /*Inital Connected Songs */
+  /*Adds the inital Connected Songs to the graph to visualize,
+    visualizes the starting graph
+  */
   useEffect(() => {
     
     if(connectedSongs.length > 0) {
@@ -90,10 +94,12 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
     }
   }, [connectedSongs]);
 
+
+  /*
+    Anytime the edges or nodes update, the graph is hast
+    to be revisualized
+  */
   useEffect(() => {
-
-   
-
     const options = {
       physics: true,
       nodes: {
@@ -118,10 +124,9 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
     
     networkContainer.current = new Network(container.current, data, options);
 
-    
+    //handles "onClick" on nodes
     networkContainer.current.on("click", (event) => {
       if (event.nodes.length) {
-        //handleNodeClick(event.nodes[0]);
         handleData(event.nodes[0]);
       }
     });
@@ -135,14 +140,11 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
   }, [nodes, edges]);
 
 
+  /* Simulates BFS Search to find shortest path
+  between start and target node */
   const findBFS = async (rootId,targetId) => {
-    console.log("Running Find BFS Algo");
-    console.log(rootId);
-    console.log(targetId);
-    console.log("end");
-
+ 
     if(networkContainer.current !== null) {
-     console.log("yolo");
       let visNodes = new Set();
       let queue = [];
       const hashMap = {};
@@ -152,7 +154,6 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
       
 
       while(qLen != 0){
-        console.log("bruhhhhhhh");
          const topVal = queue.shift();
          topVal.color = {border: 'red'};
          nodes.update(topVal);
@@ -177,7 +178,10 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
       
       let currentNodeId = targetId; 
       
-      
+      /*
+      Backtracks to find the shortes path, based on the parent
+      list
+      */
       while(true){
         const tempNode = nodes.get(currentNodeId);
         tempNode.color = {border:"green"};
@@ -194,7 +198,12 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
     }
   }
 
+  /*
+   Handles logic to expand graph, first calls a function
+   to get reccomended songs, and then adds those sogns to overall graph
+  */
   const handleExpand = async (nodeId) => {
+    //get reccomdned songs based on clicked node
     const recommendedSongs = await getReccomendedSongs(nodeId);
     setGraphData([...graphData,...recommendedSongs])
     const newNodes  = new DataSet();
@@ -234,14 +243,17 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
 
     networkContainer.current.fit();
   }
+
+  /*
+    Once a node is clicked, "clickedNode" data is 
+    updated
+  */
   const handleData = async (nodeId) => {
-    //.log('Clicked: ' + nodeId);
+    
     const clickedNodeInfo = await getTrackById(nodeId);
     const clickedNodeAudioInfo = await getTrackAudioFeaturesById(nodeId);
     setCount(count + 1);
-    //console.log('Expected: ' + clickedNodeInfo.mp3Link);
-   // console.log('Actual' + currentSong);
-
+   
     setClickedSong({
       artistName: clickedNodeInfo.artist,
       albumName: clickedNodeInfo.albumName,
@@ -256,106 +268,31 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
     
   }
 
-  const handleNodeClick = async (nodeId) => {
-
-    try {
-    
-      //const data = await fetchSongData(nodeId, signal);
-      // handle data
-      console.log('Clicked: ' + nodeId);
-      const clickedNodeInfo = await getTrackById(nodeId);
-      const clickedNodeAudioInfo = await getTrackAudioFeaturesById(nodeId);
-      const clickedNode = nodes.get(nodeId);
-
-      const audio = new Audio(clickedNodeInfo.mp3Link);
-      audio.play();
-
-      setClickedSong({
-        artistName: clickedNodeInfo.artist,
-        albumName: clickedNodeInfo.albumName,
-        songName: clickedNodeInfo.name,
-        songLen: clickedNodeInfo.duration,
-        acousticness: clickedNodeAudioInfo.acousticness,
-        danceability: clickedNodeAudioInfo.danceability,
-        energy: clickedNodeAudioInfo.energy
-      });
-      
-      //console.log("Nodes Audio Features: ")
-      //console.log(clickedSong);
-      const recommendedSongs = await getReccomendedSongs(nodeId);
-    
-      const newNodes = new DataSet(
-        recommendedSongs.map((node) => ({
-          id: node.id,
-          label: node.name,
-          image: node.image,
-          key: node.id
-        }))
-      );
-
-      const newEdges = new DataSet(
-          recommendedSongs.map((node) => ({
-          from: node.id,
-          to: nodeId,
-          key: node.id + nodeId
-        }))
-      );
-        
-      nodes.forEach((item) => {
-        newNodes.add({id: item.id, label: item.name, image: item.image,key: item.id});
-      })
-
-      edges.forEach((item) => {
-        newEdges.add(item);
-      })
-
-      setNodes(newNodes);
-      setEdges(newEdges);
-
-      networkContainer.current.fit();
-      ///
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        console.log('Fetch aborted');
-      } else {
-        console.log('Error fetching song data', err);
-      }
-    } finally {
-     
-    }
-
-    // Update the AbortController instance for the next onClick event
-   
-
-  
-  }
-
+  /*
+    Delay function for shortest path visualization
+  */
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
+
+  /*
+    Regular BFS graph, not implmented yet in actual app
+  */
   async function bfs(){
     
-      if(clicked > 0 && networkContainer.current !== null) {
-      console.log("Inside of actual BFS");
+    if(clicked > 0 && networkContainer.current !== null) {
       let visNodes = new Set();
       let queue = [];
 
       queue.push(nodes.get(rootSong.id));
-      console.log("Queue");
-      console.log(queue);
       let qLen = queue.length;
-      console.log("Oringinal Len: " + qLen);
-
+      
       while(qLen !== 0){
-         console.log("Q-Len: " + qLen);
          const topVal = queue.shift();
-         console.log(topVal);
          topVal.color = {border: 'red'};
          nodes.update(topVal);
          visNodes.add(topVal.id);
          const neighborsId = networkContainer.current.getConnectedNodes(topVal.id);
-        console.log("Neighbors: ");
-        console.log(neighborsId);
          
         neighborsId.map((neighborId) => {
           if(visNodes.has(neighborId) == false)
@@ -363,14 +300,8 @@ function Graph({graphData,setGraphData,counter,setCounter,data,setData,BFSFind,s
             queue.push(nodes.get(neighborId));
           }
         })
-        
-        console.log("Q-");
-        console.log(queue);
-         console.log("Q Len after: ");
-         console.log(queue.length);
+      
          qLen = queue.length;
-         console.log("Q-Len Af: " + qLen);
-
          await delay(250);
       }
       

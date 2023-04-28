@@ -8,22 +8,22 @@ import Albums from './Albums'
 
 
 function App() {
+  /*
+    Attributes here are responsible for showing playlists in album component
+  */
   const [results,setResults] = useState([]);
   const [createAlbum,setCreateAlbum] = useState(0);
   const [albums,setAlbums] = useState([]);
 
+  /*
+    Anytime user presses create album,
+    the data in results is appended to Album List,
+    used to showcase playlists in album component
+  */
   useEffect(() => {
-    console.log("yo-begin");
-    console.log(results);
     setAlbums(prevAlbums => [...prevAlbums, results]);
-    console.log("yo-end")
   },[createAlbum])
 
- useEffect(() => {
-    console.log("Album Updated");
-    console.log(albums);
- },[albums])
- 
   return (
     <Router>
       <NavBar/>

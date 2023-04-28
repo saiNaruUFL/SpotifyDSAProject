@@ -1,8 +1,9 @@
-import React, { useState,useEffect } from "react";
-import { Link } from "react-router-dom";
-import PlayListIcon from "./PlayListIcon"
+import React from "react";
 import PlayList from "./PlayList"
 
+/*
+  Displays the PlayList Components
+*/
 function Albums({albumData}) {
   return (
     <div style={{display: 'flex'}}>

@@ -2,7 +2,7 @@ import ReactAudioPlayer from 'react-audio-player';
 import React, { useEffect, useState, useRef } from 'react';
 import { DataSet, Network } from 'vis';
 import PriorityQueue from "js-priority-queue"
-import { getTrackById,getSpotifyData,getTrackAudioFeaturesById} from './Spotify';
+import {getSpotifyData} from './Spotify';
 
 export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClickedSong}) => {
   const [nodes, setNodes] = useState(new DataSet([
@@ -15,33 +15,23 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
   const networkContainer = useRef(null);
   const [maxHeapFinal,setMaxHeapFinal] = useState(new PriorityQueue({ comparator: (a, b) => b.differVal - a.differVal}));
   const [tempResults,setTempResults] = useState([]);
-
-  let squaredDifference = (song1, song2) => {
-    let diff = 0;
-    diff += Math.pow(song1.acousticness - song2.acousticness, 2);
-    diff += Math.pow(song1.danceability - song2.danceability, 2);
-    diff += Math.pow(song1.energy - song2.energy, 2);
-    diff += Math.pow(song1.instrumentalness - song2.instrumentalness, 2);
-    diff += Math.pow(song1.loudness - song2.loudness, 2);
-    diff += Math.pow(parseInt(song1.popularity) - parseInt(song2.popularity), 2);
-    //diff += Math.pow(song1.speechiness - song2.speechiness, 2);
-   // diff += Math.pow(song1.tempo - song2.tempo, 2);
-   // diff += Math.pow(song1.valence - song2.valence, 2);
-    return diff;
-  };
-
   
+  /*
+    Anytime the heap data changes or root song changes,
+    that means heap has to be reconstructed
+  */
   useEffect(() => {
     if(rootSong && heapData) {
-     // console.log("root song");
-     // console.log(rootSong);
       const bruh = [];
       const maxHeap = new PriorityQueue({ comparator: (a, b) => b.differVal - a.differVal});
       let i = 0;
-     // console.log("Looping through data");
+      
+      /*
+        Looping through each song and finds k closest songs using max heap
+      */
       heapData.forEach((song1) => {
-        //console.log(song);
-       // console.log(song1);
+        /* Computing the difference score between a given song and the root song
+        using spotify attributes */
         let diff = Math.abs(parseFloat(song1.acousticness) - parseFloat(rootSong.acousticness)) * 10;
         diff += Math.abs(parseFloat(song1.danceability) - parseFloat(rootSong.danceability)) * 10;
         diff += Math.abs(parseFloat(song1.energy) - parseFloat(rootSong.energy)) * 10;
@@ -50,11 +40,6 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
         diff += Math.abs(parseFloat(song1.speechiness) - parseFloat(rootSong.speechiness)) * 10;
         diff += Math.abs(parseFloat(song1.tempo) - parseFloat(rootSong.tempo)) * 10;
         diff += Math.abs(parseFloat(song1.valence) - parseFloat(rootSong.valence)) * 10;
-
-
-     //   console.log("Song 1 Acousticness: " + song1.acousticness);
-      //  console.log("Root Acoutsticness: " + rootSong.acousticness);
-        //console.log("diff: " + diff);
         
         if(maxHeap.length < k) {
           const newSong = {
@@ -62,15 +47,11 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
             differVal: diff
           };
           maxHeap.queue(newSong);
-     //     console.log("We are less than 2");
-      //    console.log(i);
         }
         else {
           const topSong = maxHeap.peek();
-        //  console.log("current max song: " + topSong.differVal);
           if(diff < topSong.differVal)
           {
-          //  console.log("Swap Occuring");
             const newSong = {
               ...song1,
               differVal: diff
@@ -78,25 +59,24 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
             bruh.push(newSong);
             maxHeap.dequeue();
             maxHeap.queue(newSong);
-         //   console.log(i);
           }
         }
         i += 1;
-       // console.log("\n");
       });
-
-      //console.log(maxHeap);
       setMaxHeapFinal(maxHeap);
-      //console.log("Heap Finished")
-  
     }
   },[heapData,rootSong])
 
-  useEffect(() => {
-   //console.log("Max Heap Final Update");
-   //console.log(maxHeapFinal);
 
-   
+  /*
+   After max heap creation, the values in the heap are
+   stored in results for later use
+  */
+  useEffect(() => {
+  
+  /*
+    returns a list of spotify data objects given a heap
+  */
    const fetchData = async () => {
     try {
       const data = await getSpotifyData(maxHeapFinal);
@@ -108,14 +88,17 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
 
   fetchData()
   .then((songs) => {
-    //console.log(songs);
     setResults(songs);
     setTempResults(songs);
-    //console.log("broddy")
   })
   
   },[maxHeapFinal]);
   
+
+/*
+  Deals with actual heap visualization after results is 
+  updated
+*/
  useEffect(() => {
   if(tempResults.length >= 2) {
   if(results.length >= 2) {
@@ -125,7 +108,7 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
     const newEdges = new DataSet([]);
 
 
-    // Add the rest of the nodes to the heapData
+    //Building heap pointing each node to its parent
     for (let i = 1; i < results.length; i++) {
         newNodes.add({id:i,label: results[i].trackName,shape:"circularImage",image:results[i].image});
 
@@ -140,12 +123,12 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
     setNodes(newNodes);
     setEdges(newEdges);
     
-    console.log(newNodes);
     const data = {
       nodes: newNodes,
       edges: newEdges,
     };
 
+    //Defining the parameters for heap visualization
     const options = {
       layout: {
         hierarchical: {
@@ -156,12 +139,12 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
       },
     };
     
+    //Refitting the data based on the new nodes and edges
     networkContainer.current = new Network(container.current, data,options);
-    //networkContainer.current.fit();
-
+    
+    //Handles "onClick" on nodes
     networkContainer.current.on("click", (event) => {
       if (event.nodes.length) {
-        //handleNodeClick(event.nodes[0]);
         handleData(event.nodes[0]);
       }
     });
@@ -172,18 +155,12 @@ export const Heap = ({results,setResults,k,heapData,rootSong,clickedSong,setClic
   },[tempResults])
 
 
+  /*
+   Handles "onClick" on a given node by setting "clickedNode"
+   to updated data, and also plays audio for that given node
+  */
   const handleData = (nodeId) => {
-    console.log('Clicked: ' + nodeId);
-   // const clickedNodeInfo = await getTrackById(nodeId);
-   // const clickedNodeAudioInfo = await getTrackAudioFeaturesById(nodeId);
     setCount(count + 1);
-    console.log(results[nodeId]);
-    console.log(results[nodeId].artist);
-  
-    //console.log('Expected: ' + clickedNodeInfo.mp3Link);
-   // console.log('Actual' + currentSong);
-
-   
     setClickedSong({
       artistName: results[nodeId].artist,
       albumName: results[nodeId].albumName,

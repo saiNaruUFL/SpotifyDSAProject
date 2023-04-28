@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import "./Carousel.css";
 
 
+/*
+ Handles Caraousel component, for rotating between songs
+ in playlist
+*/
 export const Carousel = ({data}) => {
 
   const [activeImage, setActiveImage] = useState(0);

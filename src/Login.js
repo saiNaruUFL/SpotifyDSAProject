@@ -5,6 +5,7 @@ function LoginPage() {
   const handleClick = () => {
       authorize();
   }
+  
   return (
     <div>
       <h1>Login with Spotify</h1>
